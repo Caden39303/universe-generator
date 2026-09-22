@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Null Rift — Universe Explorer</title>
+    <style>
+      :root {
+        --bg: #050a13;
+        --panel: rgba(11, 20, 34, 0.88);
+        --line: rgba(117, 190, 255, 0.25);
+        --cyan: #7fe4ff;
+        --purple: #a88cff;
+        --gold: #ffc26d;
+        --text: #edf8ff;
+        --muted: #94aabd;
+        --truck: #0c1825;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        height: 100%;
+        margin: 0;
+        background: radial-gradient(circle at 60% 0%, #18314a 0, transparent 38%), var(--bg);
+        color: var(--text);
+        font: 14px Inter, "Segoe UI", sans-serif;
+      }
+
+      button, input {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+        color: var(--text);
+        background: #122235;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 10px 12px;
+        transition: 0.15s ease;
+      }
+
+      button:hover {
+        border-color: var(--cyan);
+        box-shadow: 0 0 16px rgba(67, 216, 255, 0.2);
+        transform: translateY(-1px);
+      }
+
+      input {
+        width: 100%;
+        color: var(--text);
+        background: #07111e;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 10px 12px;
+      }
+
+      .app {
+        width: min(1500px, 96vw);
+        height: min(94vh, 950px);
+        margin: 3vh auto;
+        display: grid;
+        grid-template-columns: 310px 1fr;
+        gap: 16px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: rgba(5, 11, 20, 0.7);
+        box-shadow: 0 30px 100px rgba(0, 0, 0, 0.5);
+      }
+
+      .sidebar {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        background: linear-gradient(#0e1b2c, #080f1c);
+        border: 1px solid var(--line);
+        border-radius: 17px;
+      }
+
+      .eyebrow {
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        color: var(--cyan);
+        text-transform: uppercase;
+        opacity: 0.8;
+      }
+
+      .sidebar h1 {
+        font-size: 38px;
+        letter-spacing: 0.08em;
+        margin: 4px 0 10px;
+      }
+
+      .card {
+        padding: 14px;
+        border: 1px solid rgba(130, 207, 255, 0.14);
+        border-radius: 12px;
+        background: rgba(8, 15, 25, 0.8);
+      }
+
+      .card label {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        margin-bottom: 8px;
+      }
+
+      .seed-row, .button-row {
+        display: flex;
+        gap: 7px;
+      }
+
+      .button-row {
+        margin-top: 8px;
+      }
+
+      .button-row button {
+        flex: 1;
+        font-size: 11px;
+      }
+
+      .card h2 {
+        font-size: 20px;
+        margin: 9px 0;
+      }
+
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.06em;
+      }
+
+      .main {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      header {
+        height: 65px;
+        padding: 12px 17px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+      }
+
+      nav {
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      nav button {
+        border: 0;
+        background: transparent;
+        padding: 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      nav button:hover {
+        color: var(--cyan);
+        box-shadow: none;
+        transform: none;
+      }
+
+      nav span {
+        margin: 0 7px;
+        color: #52718b;
+      }
+
+      .status {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        color: var(--cyan);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .status i {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #44e2c0;
+        box-shadow: 0 0 13px #44e2c0;
+        display: block;
+      }
+
+      .viewport {
+        min-height: 0;
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(122, 174, 255, 0.17);
+        border-radius: 17px;
+        background: #050c16;
+      }
+
+      .viewport canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        cursor: crosshair;
+      }
+
+      .legend {
+        position: absolute;
+        bottom: 14px;
+        right: 14px;
+        padding: 9px 12px;
+        border-radius: 9px;
+        border: 1px solid var(--line);
+        background: rgba(7, 17, 29, 0.86);
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 10px;
+      }
+
+      .detail-grid div {
+        color: var(--muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .detail-grid strong {
+        display: block;
+        color: var(--text);
+        font-size: 13px;
+        text-transform: none;
+        letter-spacing: 0;
+        margin-top: 4px;
+      }
+
+      .lore {
+        margin-top: 13px;
+        color: #c1d3df;
+        line-height: 1.5;
+        font-size: 12px;
+      }
+
+      @media (max-width: 850px) {
+        .app {
+          height: auto;
+          min-height: 100vh;
+          margin: 0;
+          width: 100%;
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar { order: 2; }
+        .main { min-height: 65vh; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="eyebrow">COSMIC CARTOGRAPHY</div>
+        <h1>Null Rift</h1>
+
+        <section class="card">
+          <label for="seed">UNIVERSE SEED</label>
+          <div class="seed-row">
+            <input id="seed" value="2112" />
+            <button id="generate">GENERATE</button>
+          </div>
+          <div class="button-row">
+            <button id="randomize">RANDOMIZE</button>
+            <button id="reset">RESET VIEW</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="eyebrow">CURRENT FOCUS</div>
+          <h2 id="focusName">The Observable Universe</h2>
+          <p id="focusMeta"></p>
+        </section>
+
+        <section class="card">
+          <div class="eyebrow">SELECTED DETAIL</div>
+          <div id="details"></div>
+        </section>
+      </aside>
+
+      <main class="main">
+        <header>
+          <div>
+            <div class="eyebrow">ORBITAL EXPLORER</div>
+            <nav id="crumbs"></nav>
+          </div>
+          <div class="status"><i></i><span id="status">SIGNAL STABLE</span></div>
+        </header>
+
+        <div class="viewport">
+          <canvas id="space"></canvas>
+          <div class="legend">✦ GALAXY &nbsp; ◆ SYSTEM &nbsp; ● PLANET</div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      (() => {
+        const DATA = {
+          g: ['Aster', 'Vesper', 'Nyx', 'Orion', 'Helio', 'Luma', 'Mira', 'Nexa', 'Tethys', 'Cinder'],
+          gs: ['veil', 'nova', 'arc', 'reach', 'drift', 'horizon', 'lattice', 'wake'],
+          s: ['Alk', 'Bore', 'Vey', 'Tern', 'Ari', 'Kai', 'Niv', 'Quor'],
+          ss: ['ara', 'ion', 'fell', 'dore', 'lume', 'ring'],
+          p: ['Ariadne', 'Brin', 'Cairn', 'Dramis', 'Eryx', 'Hallow', 'Luma', 'Mora', 'Nereid', 'Sable'],
+          types: [
+            ['Terra', '#72e4d8'],
+            ['Desert', '#f0b96d'],
+            ['Toxic', '#a8dd70'],
+            ['Ice', '#b9dbff'],
+            ['Volcanic', '#ff8267'],
+            ['Oceanic', '#52c9fa'],
+            ['Gas Giant', '#d5a4ff'],
+            ['Crystalline', '#77f1d0'],
+          ],
+          c: ['Cindral Collective', 'Glimmer Assembly', 'Lattice Choir', 'Vesper Dominion', 'Khepri Accord', 'Dusk Republic'],
+          e: ['Solar flare caravan', 'Ghost signal', 'Gravity bloom', 'Ice moon breach', 'Wormgate whisper', 'Species bloom', 'Dark matter drift'],
+          resources: ['Aether crystals', 'Ironwood', 'Liquid hydrogen', 'Quantum salts', 'Glow moss', 'Phosphor ice'],
+          lore: [
+            'Its oceans remember ancient stars.',
+            'A civilization sleeps beneath the polar crust.',
+            'The first explorers left no footprints.',
+            'A living aurora circles the equator.',
+            'The moon is a museum for extinct machines.',
+            'The atmosphere hums with buried prayer frequencies.'
+          ]
+        };
+
+        function hashString(input) {
+          let h = 2166136261;
+          const text = String(input || '0');
+          for (let i = 0; i < text.length; i++) {
+            h ^= text.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+          }
+          return h >>> 0;
+        }
+
+        function mulberry32(a) {
+          let t = a >>> 0;
+          return function () {
+            t += 0x6D2B79F5;
+            let r = Math.imul(t ^ (t >>> 15), 1 | t);
+            r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+            return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+          };
+        }
+
+        function seededRng(seed) {
+          return mulberry32(hashString(seed));
+        }
+
+        function choose(rng, arr) {
+          return arr[Math.floor(rng() * arr.length)];
+        }
+
+        function makeName(rng, a, b) {
+          return choose(rng, a) + choose(rng, b);
+        }
+
+        function clamp(value, min, max) {
+          return Math.min(Math.max(value, min), max);
+        }
+
+        function createUniverse(seed) {
+          const rng = seededRng(seed);
+          const galaxies = [];
+
+          for (let i = 0, total = 12 + Math.floor(rng() * 10); i < total; i++) {
+            const gRng = seededRng(seed + ':g:' + i);
+            const angle = gRng() * Math.PI * 2;
+            const distance = 230 + gRng() * 700;
+            const galaxy = {
+              id: 'g' + i,
+              name: makeName(gRng, DATA.g, DATA.gs) + ' ' + (i + 1),
+              x: Math.cos(angle) * distance,
+              y: Math.sin(angle) * distance,
+              radius: 22 + gRng() * 20,
+              anomaly: gRng() > 0.5 ? 'Flux lattice' : 'Silent vacuum',
+              civs: 1 + Math.floor(gRng() * 6),
+              systems: []
+            };
+
+            for (let j = 0, count = 5 + Math.floor(gRng() * 7); j < count; j++) {
+              const sRng = seededRng(seed + ':s:' + i + ':' + j);
+              const sAngle = sRng() * Math.PI * 2;
+              const sDist = 60 + sRng() * 220;
+              const system = {
+                id: galaxy.id + ':s' + j,
+                name: makeName(sRng, DATA.s, DATA.ss) + '-' + (j + 1),
+                x: galaxy.x + Math.cos(sAngle) * sDist,
+                y: galaxy.y + Math.sin(sAngle) * sDist,
+                radius: 14 + sRng() * 14,
+                event: choose(sRng, DATA.e),
+                planets: []
+              };
+
+              for (let k = 0, planetCount = 3 + Math.floor(sRng() * 6); k < planetCount; k++) {
+                const pRng = seededRng(seed + ':p:' + i + ':' + j + ':' + k);
+                const pAngle = (k / planetCount) * Math.PI * 2 + pRng() * 0.4;
+                const pDist = 30 + k * 20 + pRng() * 10;
+                const [typeName, typeColor] = choose(pRng, DATA.types);
+                const population = pRng() > 0.62 ? choose(pRng, DATA.c) : null;
+                const habitability = 0.2 + pRng() * 0.8;
+
+                system.planets.push({
+                  id: system.id + ':p' + k,
+                  name: choose(pRng, DATA.p) + '-' + (k + 1),
+                  x: system.x + Math.cos(pAngle) * pDist,
+                  y: system.y + Math.sin(pAngle) * pDist,
+                  radius: 4 + pRng() * 9,
+                  type: typeName,
+                  color: typeColor,
+                  civ: population,
+                  habitability,
+                  resources: choose(pRng, DATA.resources),
+                  lore: choose(pRng, DATA.lore),
+                  moons: 0 + Math.floor(pRng() * 4),
+                  population: population ? (Math.floor(10 + pRng() * 80) + 'M') : 'No detected population',
+                });
+              }
+
+              galaxy.systems.push(system);
+            }
+
+            galaxies.push(galaxy);
+          }
+
+          return {
+            id: 'u',
+            seed,
+            name: 'The Observable Universe',
+            galaxies,
+            totalSystems: galaxies.reduce((sum, g) => sum + g.systems.length, 0),
+            totalPlanets: galaxies.reduce((sum, g) => sum + g.systems.reduce((inner, s) => inner + s.planets.length, 0), 0),
+          };
+        }
+
+        class Renderer {
+          constructor(canvas) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.cssWidth = 0;
+            this.cssHeight = 0;
+            this.dpr = 1;
+            this.resize();
+          }
+
+          resize() {
+            const rect = this.canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            this.cssWidth = rect.width || this.canvas.clientWidth || 1200;
+            this.cssHeight = rect.height || this.canvas.clientHeight || 800;
+            this.dpr = dpr;
+            this.canvas.width = Math.max(1, Math.round(this.cssWidth * dpr));
+            this.canvas.height = Math.max(1, Math.round(this.cssHeight * dpr));
+            this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          }
+
+          worldToScreen(x, y, view) {
+            return {
+              x: (x - view.cx) * view.z + this.cssWidth / 2,
+              y: (y - view.cy) * view.z + this.cssHeight / 2,
+            };
+          }
+
+          screenToWorld(x, y, view) {
+            return {
+              x: view.cx + (x - this.cssWidth / 2) / view.z,
+              y: view.cy + (y - this.cssHeight / 2) / view.z,
+            };
+          }
+
+          drawStarfield(width, height, seed) {
+            const rng = seededRng(seed + ':stars');
+            this.ctx.save();
+            for (let i = 0; i < 180; i++) {
+              const x = rng() * width;
+              const y = rng() * height;
+              const radius = 0.5 + rng() * 1.8;
+              const alpha = 0.2 + rng() * 0.9;
+              this.ctx.beginPath();
+              this.ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+              this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+              this.ctx.fill();
+            }
+            this.ctx.restore();
+          }
+
+          drawGrid(view) {
+            this.ctx.save();
+            this.ctx.strokeStyle = 'rgba(120,170,255,0.12)';
+            this.ctx.lineWidth = 1;
+            const spacing = 120;
+            const left = view.cx - (this.cssWidth / 2) / view.z;
+            const right = view.cx + (this.cssWidth / 2) / view.z;
+            const top = view.cy - (this.cssHeight / 2) / view.z;
+            const bottom = view.cy + (this.cssHeight / 2) / view.z;
+
+            for (let x = Math.floor(left / spacing) * spacing; x < right; x += spacing) {
+              const sx = (x - view.cx) * view.z + this.cssWidth / 2;
+              this.ctx.beginPath();
+              this.ctx.moveTo(sx, 0);
+              this.ctx.lineTo(sx, this.cssHeight);
+              this.ctx.stroke();
+            }
+
+            for (let y = Math.floor(top / spacing) * spacing; y < bottom; y += spacing) {
+              const sy = (y - view.cy) * view.z + this.cssHeight / 2;
+              this.ctx.beginPath();
+              this.ctx.moveTo(0, sy);
+              this.ctx.lineTo(this.cssWidth, sy);
+              this.ctx.stroke();
+            }
+            this.ctx.restore();
+          }
+
+          drawDot(obj, view, color, label, radiusScale = 1) {
+            const p = this.worldToScreen(obj.x, obj.y, view);
+            const radius = Math.max(3, (obj.radius || 14) * view.z * radiusScale);
+
+            this.ctx.save();
+            this.ctx.shadowBlur = 18;
+            this.ctx.shadowColor = color;
+            this.ctx.fillStyle = color;
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.shadowBlur = 0;
+            this.ctx.fillStyle = '#edf8ff';
+            this.ctx.font = '600 10px sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(String(label || obj.name || '').slice(0, 18), p.x, p.y - radius - 8);
+            this.ctx.restore();
+          }
+
+          drawPlanetSurface(planet, view) {
+            const p = this.worldToScreen(planet.x, planet.y, view);
+            const radius = Math.min(this.cssWidth, this.cssHeight) * 0.22;
+
+            this.ctx.save();
+            this.ctx.translate(p.x, p.y);
+
+            const grad = this.ctx.createRadialGradient(-radius * 0.35, -radius * 0.4, radius * 0.1, 0, 0, radius);
+            grad.addColorStop(0, '#dffcff');
+            grad.addColorStop(0.3, planet.color);
+            grad.addColorStop(1, '#09131f');
+
+            this.ctx.fillStyle = grad;
+            this.ctx.shadowBlur = 30;
+            this.ctx.shadowColor = planet.color;
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            for (let i = 0; i < 8; i++) {
+              this.ctx.strokeStyle = i % 2 === 0 ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.26)';
+              this.ctx.lineWidth = 10;
+              this.ctx.beginPath();
+              this.ctx.ellipse(0, 0, radius * 0.85, radius * (0.18 + i * 0.08), 0, 0, Math.PI * 2);
+              this.ctx.stroke();
+            }
+
+            for (let i = 0; i < planet.moons; i++) {
+              const angle = (i / planet.moons) * Math.PI * 2 + 0.8;
+              const mx = Math.cos(angle) * radius * 1.5;
+              const my = Math.sin(angle) * radius * 0.65;
+              this.ctx.fillStyle = '#d7e9ff';
+              this.ctx.beginPath();
+              this.ctx.arc(mx, my, 4 + i * 1.5, 0, Math.PI * 2);
+              this.ctx.fill();
+            }
+
+            this.ctx.restore();
+          }
+
+          renderUniverse(universe, view, selected) {
+            this.ctx.clearRect(0, 0, this.cssWidth, this.cssHeight);
+            this.drawStarfield(this.cssWidth, this.cssHeight, universe.seed);
+            this.drawGrid(view);
+
+            universe.galaxies.forEach((galaxy) => {
+              const isSelected = selected && selected.id === galaxy.id;
+              const radius = Math.max(12, galaxy.radius * view.z);
+              const pos = this.worldToScreen(galaxy.x, galaxy.y, view);
+              this.ctx.beginPath();
+              this.ctx.fillStyle = isSelected ? 'rgba(127, 228, 255, 0.7)' : 'rgba(168, 140, 255, 0.38)';
+              this.ctx.shadowBlur = isSelected ? 26 : 16;
+              this.ctx.shadowColor = '#7fe4ff';
+              this.ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+              this.ctx.fill();
+              this.ctx.shadowBlur = 0;
+              this.ctx.fillStyle = '#edf8ff';
+              this.ctx.font = '600 11px sans-serif';
+              this.ctx.textAlign = 'center';
+              this.ctx.fillText(galaxy.name.slice(0, 18), pos.x, pos.y - radius - 8);
+            });
+          }
+
+          renderGalaxy(galaxy, view, selected) {
+            this.ctx.clearRect(0, 0, this.cssWidth, this.cssHeight);
+            this.drawStarfield(this.cssWidth, this.cssHeight, galaxy.id);
+            this.drawGrid(view);
+
+            galaxy.systems.forEach((system) => {
+              const isSelected = selected && selected.id === system.id;
+              const pos = this.worldToScreen(system.x, system.y, view);
+              const radius = Math.max(7, (system.radius + 8) * view.z);
+              this.ctx.beginPath();
+              this.ctx.fillStyle = isSelected ? 'rgba(255, 194, 109, 0.9)' : 'rgba(255, 194, 109, 0.6)';
+              this.ctx.shadowBlur = isSelected ? 24 : 12;
+              this.ctx.shadowColor = '#ffc26d';
+              this.ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+              this.ctx.fill();
+              this.ctx.shadowBlur = 0;
+              this.ctx.fillStyle = '#edf8ff';
+              this.ctx.font = '600 10px sans-serif';
+              this.ctx.textAlign = 'center';
+              this.ctx.fillText(system.name.slice(0, 14), pos.x, pos.y - radius - 12);
+            });
+          }
+
+          renderSystem(system, view, selected) {
+            this.ctx.clearRect(0, 0, this.cssWidth, this.cssHeight);
+            this.drawStarfield(this.cssWidth, this.cssHeight, system.id);
+            this.drawGrid(view);
+
+            const pos = this.worldToScreen(system.x, system.y, view);
+            this.ctx.beginPath();
+            this.ctx.fillStyle = 'rgba(255, 194, 109, 0.85)';
+            this.ctx.shadowBlur = 24;
+            this.ctx.shadowColor = '#ffc26d';
+            this.ctx.arc(pos.x, pos.y, 42 * view.z, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.shadowBlur = 0;
+
+            system.planets.forEach((planet) => {
+              const isSelected = selected && selected.id === planet.id;
+              const pPos = this.worldToScreen(planet.x, planet.y, view);
+              const radius = Math.max(3, planet.radius * view.z);
+              this.ctx.beginPath();
+              this.ctx.fillStyle = isSelected ? '#dffcff' : planet.color;
+              this.ctx.shadowBlur = isSelected ? 20 : 12;
+              this.ctx.shadowColor = planet.color;
+              this.ctx.arc(pPos.x, pPos.y, radius, 0, Math.PI * 2);
+              this.ctx.fill();
+              this.ctx.shadowBlur = 0;
+              if (planet.civ) {
+                this.ctx.beginPath();
+                this.ctx.fillStyle = 'rgba(127, 228, 255, 0.9)';
+                this.ctx.arc(pPos.x + radius + 5, pPos.y - radius - 5, 2.5, 0, Math.PI * 2);
+                this.ctx.fill();
+              }
+            });
+          }
+
+          renderPlanet(planet, view) {
+            this.ctx.clearRect(0, 0, this.cssWidth, this.cssHeight);
+            this.drawStarfield(this.cssWidth, this.cssHeight, planet.id);
+
+            this.ctx.fillStyle = 'rgba(139, 190, 255, 0.08)';
+            this.ctx.fillRect(0, 0, this.cssWidth, this.cssHeight);
+
+            this.drawPlanetSurface(planet, view);
+
+            this.ctx.save();
+            this.ctx.fillStyle = '#dfeaf9';
+            this.ctx.font = '600 15px sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(planet.name, this.cssWidth / 2, this.cssHeight * 0.78);
+            this.ctx.restore();
+          }
+        }
+
+        const canvas = document.getElementById('space');
+        const renderer = new Renderer(canvas);
+        const seedInput = document.getElementById('seed');
+        const generateBtn = document.getElementById('generate');
+        const randomizeBtn = document.getElementById('randomize');
+        const resetBtn = document.getElementById('reset');
+        const focusName = document.getElementById('focusName');
+        const focusMeta = document.getElementById('focusMeta');
+        const details = document.getElementById('details');
+        const status = document.getElementById('status');
+        const crumbs = document.getElementById('crumbs');
+
+        let state = null;
+
+        function setStatus(text) {
+          status.textContent = text;
+        }
+
+        function buildCrumbs() {
+          const items = [
+            { label: 'Universe', enabled: true, level: 0 },
+            { label: 'Galaxy', enabled: state.mode === 'galaxy' || state.mode === 'system' || state.mode === 'planet', level: 1 },
+            { label: 'System', enabled: state.mode === 'system' || state.mode === 'planet', level: 2 },
+            { label: 'Planet', enabled: state.mode === 'planet', level: 3 }
+          ];
+
+          crumbs.innerHTML = '';
+          items.forEach((item, index) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = item.label;
+            button.disabled = !item.enabled;
+            button.onclick = () => {
+              if (item.level === 0) goUniverse();
+              else if (item.level === 1) goGalaxy();
+              else if (item.level === 2) goSystem();
+            };
+            crumbs.appendChild(button);
+            if (index < items.length - 1) {
+              const sep = document.createElement('span');
+              sep.textContent = '/';
+              crumbs.appendChild(sep);
+            }
+          });
+        }
+
+        function updateDetails() {
+          if (state.mode === 'universe') {
+            focusName.textContent = state.universe.name;
+            focusMeta.textContent = `Seed ${state.universe.seed} • ${state.universe.galaxies.length} galaxies`;
+            details.innerHTML = `
+              <div class="detail-grid">
+                <div>GALAXIES<strong>${state.universe.galaxies.length}</strong></div>
+                <div>SYSTEMS<strong>${state.universe.totalSystems}</strong></div>
+                <div>PLANETS<strong>${state.universe.totalPlanets}</strong></div>
+                <div>SEED<strong>${state.universe.seed}</strong></div>
+              </div>
+            `;
+          } else if (state.mode === 'galaxy') {
+            const g = state.focus;
+            focusName.textContent = g.name;
+            focusMeta.textContent = `${g.systems.length} systems • ${g.civs} civilisations`;
+            details.innerHTML = `
+              <div class="detail-grid">
+                <div>ANOMALY<strong>${g.anomaly}</strong></div>
+                <div>CIVILISATIONS<strong>${g.civs}</strong></div>
+                <div>SYSTEMS<strong>${g.systems.length}</strong></div>
+                <div>POSITION<strong>${Math.round(g.x)}, ${Math.round(g.y)}</strong></div>
+              </div>
+            `;
+          } else if (state.mode === 'system') {
+            const s = state.focus;
+            focusName.textContent = s.name;
+            focusMeta.textContent = `${s.planets.length} planets • ${s.event}`;
+            details.innerHTML = `
+              <div class="detail-grid">
+                <div>PLANETS<strong>${s.planets.length}</strong></div>
+                <div>EVENT<strong>${s.event}</strong></div>
+                <div>MOONS<strong>${s.planets.reduce((a, p) => a + p.moons, 0)}</strong></div>
+                <div>POSITION<strong>${Math.round(s.x)}, ${Math.round(s.y)}</strong></div>
+              </div>
+            `;
+          } else if (state.mode === 'planet') {
+            const p = state.focus;
+            focusName.textContent = p.name;
+            focusMeta.textContent = `${p.type} • ${p.civ || 'Uninhabited'}`;
+            details.innerHTML = `
+              <div class="detail-grid">
+                <div>TYPE<strong>${p.type}</strong></div>
+                <div>HABITABILITY<strong>${Math.round(p.habitability * 100)}%</strong></div>
+                <div>RESOURCES<strong>${p.resources}</strong></div>
+                <div>POPULATION<strong>${p.population}</strong></div>
+              </div>
+              <p class="lore">${p.lore}</p>
+            `;
+          }
+
+          buildCrumbs();
+        }
+
+        function render() {
+          renderer.resize();
+          if (state.mode === 'universe') {
+            renderer.renderUniverse(state.universe, state.view, state.selection);
+          } else if (state.mode === 'galaxy') {
+            renderer.renderGalaxy(state.focus, state.view, state.selection);
+          } else if (state.mode === 'system') {
+            renderer.renderSystem(state.focus, state.view, state.selection);
+          } else if (state.mode === 'planet') {
+            renderer.renderPlanet(state.focus, state.view);
+          }
+
+          updateDetails();
+        }
+
+        function init(seed) {
+          const universe = createUniverse(seed);
+          state = {
+            universe,
+            mode: 'universe',
+            focus: universe,
+            selection: universe,
+            view: { cx: 0, cy: 0, z: 0.72 }
+          };
+          render();
+          setStatus('SIGNAL STABLE');
+        }
+
+        function goUniverse() {
+          state.mode = 'universe';
+          state.focus = state.universe;
+          state.selection = state.universe;
+          state.view = { cx: 0, cy: 0, z: 0.72 };
+          render();
+          setStatus('RETURNED TO UNIVERSE ATLAS');
+        }
+
+        function goGalaxy() {
+          if (state.mode === 'planet') {
+            state.mode = 'system';
+          }
+          if (state.mode === 'system') {
+            const current = state.focus;
+            const galaxy = state.universe.galaxies.find((g) => g.systems.some((s) => s.id === current.id)) || state.universe.galaxies[0];
+            state.mode = 'galaxy';
+            state.focus = galaxy;
+            state.selection = galaxy;
+            state.view = { cx: galaxy.x, cy: galaxy.y, z: 1.4 };
+            render();
+            setStatus('RETURNED TO GALAXY OVERVIEW');
+            return;
+          }
+          state.mode = 'galaxy';
+          state.focus = state.selection && state.selection.id ? state.selection : state.universe.galaxies[0];
+          state.view = { cx: state.focus.x, cy: state.focus.y, z: 1.4 };
+          render();
+          setStatus('ENTERED GALACTIC OVERVIEW');
+        }
+
+        function goSystem() {
+          if (state.mode === 'planet') {
+            state.mode = 'system';
+          }
+          const current = state.focus;
+          const system = current && current.planets ? current : state.universe.galaxies[0].systems[0];
+          state.mode = 'system';
+          state.focus = system;
+          state.selection = system;
+          state.view = { cx: system.x, cy: system.y, z: 2.3 };
+          render();
+          setStatus('SCANNING SYSTEM');
+        }
+
+        function nearestMatch(point, objects, radius) {
+          for (const obj of objects) {
+            const d = Math.hypot(point.x - obj.x, point.y - obj.y);
+            if (d < radius) return obj;
+          }
+          return null;
+        }
+
+        function handleCanvasClick(event) {
+          const rect = canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+          const world = renderer.screenToWorld(x, y, state.view);
+
+          if (state.mode === 'universe') {
+            const hit = nearestMatch(world, state.universe.galaxies, 26);
+            if (hit) {
+              state.mode = 'galaxy';
+              state.focus = hit;
+              state.selection = hit;
+              state.view = { cx: hit.x, cy: hit.y, z: 1.4 };
+              render();
+              setStatus(`ENTERING ${hit.name}`);
+              return;
+            }
+            return;
+          }
+
+          if (state.mode === 'galaxy') {
+            const hit = nearestMatch(world, state.focus.systems, 20);
+            if (hit) {
+              state.mode = 'system';
+              state.focus = hit;
+              state.selection = hit;
+              state.view = { cx: hit.x, cy: hit.y, z: 2.3 };
+              render();
+              setStatus(`SCANNING ${hit.name}`);
+              return;
+            }
+            goUniverse();
+            return;
+          }
+
+          if (state.mode === 'system') {
+            const hit = nearestMatch(world, state.focus.planets, 18);
+            if (hit) {
+              state.mode = 'planet';
+              state.focus = hit;
+              state.selection = hit;
+              state.view = { cx: hit.x, cy: hit.y, z: 1.8 };
+              render();
+              setStatus(`DETAIL VIEW: ${hit.name}`);
+              return;
+            }
+            goGalaxy();
+            return;
+          }
+        }
+
+        let drag = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        canvas.addEventListener('mousedown', (event) => {
+          drag = true;
+          lastX = event.clientX;
+          lastY = event.clientY;
+        });
+
+        window.addEventListener('mousemove', (event) => {
+          if (!drag || state.mode === 'planet') return;
+          const dx = event.clientX - lastX;
+          const dy = event.clientY - lastY;
+          lastX = event.clientX;
+          lastY = event.clientY;
+          state.view.cx -= dx / state.view.z;
+          state.view.cy -= dy / state.view.z;
+          render();
+        });
+
+        window.addEventListener('mouseup', () => {
+          drag = false;
+        });
+
+        canvas.addEventListener('click', handleCanvasClick);
+
+        canvas.addEventListener('wheel', (event) => {
+          event.preventDefault();
+          const rect = canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+          const before = renderer.screenToWorld(x, y, state.view);
+          const factor = Math.exp(-event.deltaY * 0.0012);
+          state.view.z = clamp(state.view.z * factor, 0.25, 9);
+          const after = renderer.screenToWorld(x, y, state.view);
+          state.view.cx += before.x - after.x;
+          state.view.cy += before.y - after.y;
+          render();
+        }, { passive: false });
+
+        generateBtn.addEventListener('click', () => {
+          init(seedInput.value.trim() || '2112');
+        });
+
+        randomizeBtn.addEventListener('click', () => {
+          const value = String(Math.floor(1000 + Math.random() * 900000));
+          seedInput.value = value;
+          init(value);
+        });
+
+        resetBtn.addEventListener('click', goUniverse);
+
+        seedInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            init(seedInput.value.trim() || '2112');
+          }
+        });
+
+        window.addEventListener('resize', render);
+
+        init(seedInput.value || '2112');
+      })();
+    </script>
+  </body>
+</html>
